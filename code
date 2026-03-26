@@ -1,0 +1,97 @@
+#define BLYNK_TEMPLATE_ID "TMPL3fkkAaby4"
+#define BLYNK_TEMPLATE_NAME "ELDERLY CARE"
+#define BLYNK_AUTH_TOKEN "iR_OQD5BUR0na68aEMdPuCGNK0QtvSyM"
+#ifdef ESP32
+ #include <WiFi.h>
+ #include <BlynkSimpleEsp32.h>
+#else
+ #include <ESP8266WiFi.h>
+22
+ #include <BlynkSimpleEsp8266.h>
+#endif
+#define BLYNK_PRINT Serial
+char auth[] = "iR_OQD5BUR0na68aEMdPuCGNK0QtvSyM"; // authuntifaction id
+char ssid[] = "project10"; //wifi name
+char pass[] = "project10"; //wifi password
+#include <Wire.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_ADXL345_U.h>
+Adafruit_ADXL345_Unified accel = Adafruit_ADXL345_Unified();
+#include <OneWire.h>
+#include <DallasTemperature.h>
+const int oneWireBus = D5;
+OneWire oneWire(oneWireBus);
+DallasTemperature sensors(&oneWire);
+float temperatureC,temperatureF;
+#define buzzer D6
+int a=0;
+void setup()
+{
+ Serial.begin(9600);
+ pinMode(buzzer,OUTPUT);
+ digitalWrite(buzzer,LOW);
+ pinMode(D0,OUTPUT);
+ digitalWrite(D0,LOW);
+ if(!accel.begin())
+ {
+ Serial.println("No valid sensor found");
+ while(1);
+ }
+23
+ Serial.println("CONNECTING TO...");
+ WiFi.mode(WIFI_STA);
+ WiFi.begin(ssid, pass);
+ while(WiFi.status() != WL_CONNECTED)
+ {
+ delay(100);
+ Serial.println(".");
+ }
+ Serial.println(WiFi.localIP());
+ Serial.println(" WIFI CONNECTED ");
+ Serial.println(WiFi.localIP());
+ delay(1000);
+ Blynk.config(auth);
+ sensors.begin();
+}
+void loop()
+{
+ Blynk.run();
+ temp_loop();
+ sensors_event_t event;
+ accel.getEvent(&event);
+ Serial.print("X: "); Serial.print(event.acceleration.x); Serial.print("");
+ Serial.print("Y: "); Serial.print(event.acceleration.y); Serial.print("");
+ Serial.print("Z: "); Serial.print(event.acceleration.z); Serial.print("");
+ Serial.println("m/s^2 ");
+ delay(500);
+ if(event.acceleration.x >= 2.0 || event.acceleration.x <= -2.0 || event.acceleration.y >= 2.0 ||
+event.acceleration.y <= -2.0 || temperatureC >= 35 || temperatureC <= 30)
+ {
+24
+ a=a+1;
+ Serial.println("ALERT");
+ digitalWrite(buzzer,HIGH);
+ }
+ else
+ {
+ a=0;
+ Serial.println("NORMAL");
+ digitalWrite(buzzer,LOW);
+ }
+ if(a==1)
+ {
+ Blynk.logEvent("fall_alert");
+ }
+ digitalWrite(D0,LOW);delay(300);digitalWrite(D0,LOW);delay(200);
+}
+void temp_loop()
+{
+ sensors.requestTemperatures();
+ float temperatureC = sensors.getTempCByIndex(0);
+ float temperatureF = sensors.getTempFByIndex(0);
+ Serial.print(temperatureC);
+ Serial.println("ºC");
+ Serial.print(temperatureF);
+ Serial.println("ºF");
+ delay(500);
+}
