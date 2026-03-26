@@ -52,7 +52,6 @@ Installation and Setup
 Repository Setup:
 
 Bash
-git clone https://github.com/VagdeviVellala/Elderly-Care-IoT.git
 Blynk Configuration:
 
 Create a new template in the Blynk Console.
